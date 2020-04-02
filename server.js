@@ -13,7 +13,7 @@ app.use(cookieParser())
 
 
 const userRoutes = require("./routes/userRoutes/userRoutes.js")
-
+const employerRoute = require("./routes/appRoutes/employerRoutes.js")
 
 dotenv.config({
     path: "./private.env"
@@ -37,6 +37,7 @@ app.use((_, res, next) => {
 })
 
 app.use(userRoutes)
+app.use(employerRoute)
 
 
 // let user = new User({

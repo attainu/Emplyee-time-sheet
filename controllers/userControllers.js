@@ -5,7 +5,14 @@ const bcrypt = require("bcryptjs")
 const User = require('./../models/User.js')
 const Otp = require('./../models/Otp.js')
 const funcDailyTasks = require('./../models/funcDailytasks.js')
-let DailyTasksList 
+let DailyTasksList
+
+let todayDate = Date().slice(0,15).replace(" ","_").replace(" ","_").replace(" ","_")
+console.log(todayDate, 'todayDate', typeof(todayDate))
+let dateObj = {date: todayDate}
+console.log(dateObj)
+// let todayOtherDate = {...todayDate}
+// console.log(todayOtherDate)
 
 const sendOTP = require('./../utilities/sendOtp.js')
 const getNewDBname = require('./../utilities/getNewDBname.js')
@@ -37,62 +44,122 @@ module.exports.dashboard = (req, res, next) => {
         delete user._doc.password
         console.log(user, 'dashboard2')
 
-        // res.json({
-        //     user: user
-        // })
-        if(user.isEmployer) {
-            User.find({employerEmail: email}, async (err, employees) => {
+
+        try {
+            console.log(email, 'email bofore going to DailyTaskList')
+            DailyTasksList = await funcDailyTasks(email)
+
+            DailyTasksList.findOne({date: todayDate}, (err, todaysTasks) => {
                 if(err) return next(err)
-
-                employees = employees.filter(employee => !employee.allowedByEmployer)
-                employees = employees.map(employee => {
-                    return {
-                        name: employee.name,
-                        email: employee.email
-                    }
-                })
-
-                try {
-                    console.log(email, 'email bofore going to DailyTaskList')
-                    DailyTasksList = await funcDailyTasks(email)
-
-                } catch(err) {
-                    console.log(err, 'err')
+                console.log(todayDate)
+                console.log(todaysTasks, !todaysTasks, '!todaysTasks')
+                if(!todaysTasks) {
+                    console.log(todayDate)
+                    let dateObj = {date: todayDate}
+                    todaysTasks = new DailyTasksList(dateObj)
+                    console.log(todaysTasks, 'todaysTasks before saving')
+                    todaysTasks.save()
+                    .then(response => {
+                        console.log(response, 'response saving todaysTasks')
+                        
+                        
+                
+                    })
+                    .catch(reject => console.log(reject))
                 }
-                let todayObj = new DailyTasksList({name: `${email}-employer`})
-                todayObj.save()
-                .then(response => console.log(response))
-                .catch(reject => console.log(reject))
 
-                res.json({
-                    successLogin: true,
-                    user: user,
-                    employees: employees,
-                    token: req.body.token
-                })
+
+                if(user.isEmployer) {
+                    User.find({employerEmail: email}, async (err, employees) => {
+                        if(err) return next(err)
+
+                        console.log(employees, 'employees')
+                        let employeesWaiting = employees.filter(employee => !employee.allowedByEmployer)
+                        employeesWaiting = employeesWaiting.map(employee => {
+                            return {
+                                name: employee.name,
+                                email: employee.email
+                            }
+                        })
+                        console.log(employees, 'mapped employees')
+
+                        let allowedEmployees = employees.filter(employee => employee.allowedByEmployer)
+                        allowedEmployees = allowedEmployees.map(employee => {
+                            return {
+                                name: employee.name,
+                                email: employee.email
+                            }
+                        })
+                        // try {
+                        //     console.log(email, 'email bofore going to DailyTaskList')
+                        //     DailyTasksList = await funcDailyTasks(email)
+        
+                        // } catch(err) {
+                        //     console.log(err, 'err')
+                        // }
+                        // let todayObj = new DailyTasksList({name: `${email}-employer`})
+                        // todayObj.save()
+                        // .then(response => console.log(response))
+                        // .catch(reject => console.log(reject))
+        
+                        console.log(todaysTasks, 'todaysTasks before res.json')
+                        res.json({
+                            successLogin: true,
+                            user: user,
+                            allowedEmployees: allowedEmployees,
+                            employeesWaiting: employeesWaiting,
+                            token: req.body.token,
+                            todaysTasks: todaysTasks
+                        })
+        
+        
+                    })
+                } else {
+        
+                    // try {
+                    //     console.log(email, 'email bofore going to DailyTaskList')
+                    //     DailyTasksList = await funcDailyTasks(email)
+        
+                    // } catch(err) {
+                    //     console.log(err, 'err')
+                    // }
+                    // let todayObj = new DailyTasksList({name: `${user.employerEmail}'s-employee`})
+                    // todayObj.save()
+                    // .then(response => console.log(response))
+                    // .catch(reject => console.log(reject))
+        
+                    User.findOne({email: user.employerEmail}, (err, employer) => {
+                        if(err) return next(err)
+
+
+                        res.json({
+                            successLogin: true,
+                            user: user,
+                            employerName: employer.name,
+                            token: req.body.token,
+                            todaysTasks: todaysTasks
+                        })
+
+                    })
+
+
+                    
+                }
+
+
 
 
             })
-        } else {
 
-            try {
-                console.log(email, 'email bofore going to DailyTaskList')
-                DailyTasksList = await funcDailyTasks(email)
+            
 
-            } catch(err) {
-                console.log(err, 'err')
-            }
-            let todayObj = new DailyTasksList({name: `${user.employerEmail}'s-employee`})
-            todayObj.save()
-            .then(response => console.log(response))
-            .catch(reject => console.log(reject))
-
-            res.json({
-                successLogin: true,
-                user: user,
-                token: req.body.token
-            })
+        } catch(err) {
+            console.log(err, 'err')
         }
+
+
+
+ 
 
 
     })

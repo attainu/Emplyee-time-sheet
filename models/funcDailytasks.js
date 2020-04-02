@@ -16,9 +16,9 @@ module.exports = async email => {
     })
 
     const dailyTasksListSchema = new mongoose.Schema({
-        name: {
+        date: {
             type: String,
-            // unique: true
+            unique: true
         }
     })
 
