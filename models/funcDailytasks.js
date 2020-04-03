@@ -19,8 +19,32 @@ module.exports = async email => {
         date: {
             type: String,
             unique: true
-        }
+        },
+        tasks: [
+            {
+                assignedTo: [
+                    {
+                        employeeEmail: {
+                            type: String,
+                            require: true
+                        },
+                        in: String,
+                        out: String
+                    }
+                ],
+                title: {
+                    type: String,
+                    trim: true
+                },
+                details: String
+            }
+        ]
+
     })
+
+    dailyTasksListSchema.statics.addAssignment = function() {
+        console.log(this, 'this is static')
+    }
 
     return employerDB.model('dailytasks', dailyTasksListSchema)
 

@@ -53,7 +53,7 @@ app.use(employerRoute)
 
 
 app.use((err, req, res, next) => {
-
+    console.log("errorHandler")
     res.json({err: err})
 })
 

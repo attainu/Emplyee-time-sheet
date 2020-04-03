@@ -2,11 +2,11 @@ const User = require("./../models/User.js")
 
 module.exports = (name, email, DBlist) => {
 
-    for(i = 0; i < name.length; i++) {
+    for(i = name.length - 1; i > 0 ; i--) {
         name = name.replace(".","").replace("@","").replace("_","").replace("-","").replace("!","").replace("#","").replace("$","").replace("^","").replace("&","").replace("?","").replace("=","").replace("/","").replace("-","").replace("+","").replace("*","").replace("'","").replace(",","").replace(")","").replace("(","").replace('"',"").replace("|","").replace("{","").replace("`","").replace(">","").replace("<","").replace(";","").replace(":","").replace("]","").replace("[","").replace("@","")     
     }
 
-    for(i = 0; i < email.length; i++) {
+    for(i = email.length - 1; i > 0 ; i--) {
         email = email.replace(".","").replace("@","").replace("_","").replace("-","").replace("!","").replace("#","").replace("$","").replace("^","").replace("&","").replace("?","").replace("=","").replace("/","").replace("-","").replace("+","").replace("*","").replace("'","").replace(",","").replace(")","").replace("(","").replace('"',"").replace("|","").replace("{","").replace("`","").replace(">","").replace("<","").replace(";","").replace(":","").replace("]","").replace("[","").replace("@","")     
     }
 

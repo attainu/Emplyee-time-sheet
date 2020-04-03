@@ -9,8 +9,8 @@ let DailyTasksList
 
 let todayDate = Date().slice(0,15).replace(" ","_").replace(" ","_").replace(" ","_")
 console.log(todayDate, 'todayDate', typeof(todayDate))
-let dateObj = {date: todayDate}
-console.log(dateObj)
+// let dateObj = {date: todayDate}
+// console.log(dateObj)
 // let todayOtherDate = {...todayDate}
 // console.log(todayOtherDate)
 
@@ -28,7 +28,7 @@ class UserClass {
 }
 
 
-const cookieOptions = {maxAge: 1000 * 60 * 60 * 12, httpOnly: true, path: '/'}
+const cookieOptions = {maxAge: 1000 * 60 * 60 * 12, httpOnly: true, path: '/', sameSite: "none"}
 
 
 
@@ -37,10 +37,11 @@ module.exports.dashboard = (req, res, next) => {
     User.findOne({email: email}, async (err, user) => {
         if(err) return next(err)
 
-        console.log(req.cookies, 'req cookies')
+        console.log(req.body.token, 'req body token dashboard')
+        console.log(req.cookies, 'req cookies dashboard')
 
         
-        console.log(user, 'dashboard1')
+        // console.log(user, 'dashboard1')
         delete user._doc.password
         console.log(user, 'dashboard2')
 
@@ -48,19 +49,19 @@ module.exports.dashboard = (req, res, next) => {
         try {
             console.log(email, 'email bofore going to DailyTaskList')
             DailyTasksList = await funcDailyTasks(email)
-
+            
             DailyTasksList.findOne({date: todayDate}, (err, todaysTasks) => {
                 if(err) return next(err)
-                console.log(todayDate)
+                // console.log(todayDate)
                 console.log(todaysTasks, !todaysTasks, '!todaysTasks')
                 if(!todaysTasks) {
-                    console.log(todayDate)
+                    // console.log(todayDate)
                     let dateObj = {date: todayDate}
                     todaysTasks = new DailyTasksList(dateObj)
-                    console.log(todaysTasks, 'todaysTasks before saving')
+                    // console.log(todaysTasks, 'todaysTasks before saving')
                     todaysTasks.save()
                     .then(response => {
-                        console.log(response, 'response saving todaysTasks')
+                        // console.log(response, 'response saving todaysTasks')
                         
                         
                 
@@ -73,7 +74,7 @@ module.exports.dashboard = (req, res, next) => {
                     User.find({employerEmail: email}, async (err, employees) => {
                         if(err) return next(err)
 
-                        console.log(employees, 'employees')
+                        // console.log(employees, 'employees')
                         let employeesWaiting = employees.filter(employee => !employee.allowedByEmployer)
                         employeesWaiting = employeesWaiting.map(employee => {
                             return {
@@ -81,7 +82,7 @@ module.exports.dashboard = (req, res, next) => {
                                 email: employee.email
                             }
                         })
-                        console.log(employees, 'mapped employees')
+                        // console.log(employees, 'mapped employees')
 
                         let allowedEmployees = employees.filter(employee => employee.allowedByEmployer)
                         allowedEmployees = allowedEmployees.map(employee => {
@@ -102,7 +103,7 @@ module.exports.dashboard = (req, res, next) => {
                         // .then(response => console.log(response))
                         // .catch(reject => console.log(reject))
         
-                        console.log(todaysTasks, 'todaysTasks before res.json')
+                        // console.log(todaysTasks, 'todaysTasks before res.json')
                         res.json({
                             successLogin: true,
                             user: user,
@@ -186,11 +187,11 @@ console.log(req.cookies.token, 'cookie postLogin')
 
             console.log(token, 'token postLogin')
    
-            console.log(user, 'postLogin1')
+            // console.log(user, 'postLogin1')
 
             user.isLoggedIn = true
 
-            console.log(user, 'postLogin2')
+            // console.log(user, 'postLogin2')
 
             user.save().then(user => {
                 delete user._doc.password
@@ -262,15 +263,15 @@ module.exports.makeEmployerDB = (req, res, next) => {
     User.find({isEmployer: true}, (err, res) => {
         if(err) return next(err)
         let DBlist = res.map(employer => employer.DBname)
-        console.log(DBlist, 'DBlist')
+        // console.log(DBlist, 'DBlist')
 
         let newDBname = getNewDBname(name, email, DBlist)
-        console.log(newDBname, 'newDBname')
+        // console.log(newDBname, 'newDBname')
 
         User.findOneAndUpdate({email: email}, {DBname: newDBname}, {new: true}, (err, user) => {
             if(err) return next(err)
 
-            console.log(user, "employer with DBname")
+            // console.log(user, "employer with DBname")
             next()
         })
 
@@ -338,10 +339,10 @@ module.exports.sendOTP = (req, res, next) => {
     let {token} = req.body
     console.log(token, 'token sendOtp1')
 
-    console.log(isEmailverified, 'isEmailVerified')
-    console.log(email, 'email')
+    // console.log(isEmailverified, 'isEmailVerified')
+    // console.log(email, 'email')
     if(!isEmailverified) {
-        console.log('creating OTP')
+        // console.log('creating OTP')
         otp = Math.floor(Math.random() *10000)
         let newOtpObj = {
             email: email,
@@ -373,7 +374,7 @@ module.exports.sendOTP = (req, res, next) => {
 
 module.exports.verifyEmailByOtp = async (req, res, next) => {
     console.log(req.body, 'at cont')
-    let {otp, user} = req.body
+    let {otp, user, token} = req.body
     let email = user.email
 
     try {
@@ -397,7 +398,7 @@ module.exports.verifyEmailByOtp = async (req, res, next) => {
             delete user._doc.password
             req.body = {}
             req.body.user = user
-            // req.body.token = token
+            req.body.token = token
             next()
 
            
@@ -444,23 +445,128 @@ module.exports.deleteLogout = async (req, res, next) => {
 
 
 module.exports.patchAllowEmployee = async (req, res, next) => {
-    console.log(req.body.employeeEmail, 'allowEmployee')
-    let {employeeEmail} = req.body
+    // console.log(req.body.employeeEmail, 'allowEmployee')
+    let {employeeEmail, user} = req.body
     let employee = await User.findOneAndUpdate({email: employeeEmail}, {allowedByEmployer: true}, {new: true}) 
-    res.json({
-        allowedEmployee: employee,
-        allow: true
+    
+    
+    DailyTasksList.findOne({date: todayDate}, (err, todaysTasks) => {
+        if(err) return next(err)
+        // console.log(todayDate)
+        console.log(todaysTasks, !todaysTasks, '!todaysTasks')
+        if(!todaysTasks) {
+            // console.log(todayDate)
+            let dateObj = {date: todayDate}
+            todaysTasks = new DailyTasksList(dateObj)
+            // console.log(todaysTasks, 'todaysTasks before saving')
+            todaysTasks.save()
+            .then(response => {
+                // console.log(response, 'response saving todaysTasks')
+                
+                
+        
+            })
+            .catch(reject => console.log(reject))
+        }
+        
+        User.find({employerEmail: user.email}, async (err, employees) => {
+            if(err) return next(err)
+    
+            // console.log(employees, 'employees')
+            let employeesWaiting = employees.filter(employee => !employee.allowedByEmployer)
+            employeesWaiting = employeesWaiting.map(employee => {
+                return {
+                    name: employee.name,
+                    email: employee.email
+                }
+            })
+            // console.log(employees, 'mapped employees')
+    
+            let allowedEmployees = employees.filter(employee => employee.allowedByEmployer)
+            allowedEmployees = allowedEmployees.map(employee => {
+                return {
+                    name: employee.name,
+                    email: employee.email
+                }
+            })
+    
+            res.json({
+                employeeAllowed: 'success',
+                user: user,
+                allowedEmployees: allowedEmployees,
+                employeesWaiting: employeesWaiting,
+                token: req.body.token,
+                todaysTasks: todaysTasks
+            })
+    
+    
+        })
+
+
     })
+   
 }
 
 module.exports.deleteRejectedEmployee = async (req, res, next) => {
-    console.log(req.body)
+    // console.log(req.body)
     let {employeeEmail} = req.params
-
-    console.log(employeeEmail)
+    let {user} = req.body
+    // console.log(employeeEmail)
     await User.findOneAndRemove({email: employeeEmail})
 
-    res.json({
-        rejected: employeeEmail
+    DailyTasksList.findOne({date: todayDate}, (err, todaysTasks) => {
+        if(err) return next(err)
+        // console.log(todayDate)
+        console.log(todaysTasks, !todaysTasks, '!todaysTasks')
+        if(!todaysTasks) {
+            // console.log(todayDate)
+            let dateObj = {date: todayDate}
+            todaysTasks = new DailyTasksList(dateObj)
+            // console.log(todaysTasks, 'todaysTasks before saving')
+            todaysTasks.save()
+            .then(response => {
+                // console.log(response, 'response saving todaysTasks')
+                
+                
+        
+            })
+            .catch(reject => console.log(reject))
+        }
+        
+        User.find({employerEmail: user.email}, async (err, employees) => {
+            if(err) return next(err)
+    
+            // console.log(employees, 'employees')
+            let employeesWaiting = employees.filter(employee => !employee.allowedByEmployer)
+            employeesWaiting = employeesWaiting.map(employee => {
+                return {
+                    name: employee.name,
+                    email: employee.email
+                }
+            })
+            // console.log(employees, 'mapped employees')
+    
+            let allowedEmployees = employees.filter(employee => employee.allowedByEmployer)
+            allowedEmployees = allowedEmployees.map(employee => {
+                return {
+                    name: employee.name,
+                    email: employee.email
+                }
+            })
+    
+            res.json({
+                employeeRejected: 'success',
+                user: user,
+                allowedEmployees: allowedEmployees,
+                employeesWaiting: employeesWaiting,
+                token: req.body.token,
+                todaysTasks: todaysTasks
+            })
+    
+    
+        })
+
     })
+
+    
 }
