@@ -28,6 +28,7 @@ module.exports.assignNewTask = async (req, res, next) => {
         title,
         details
     } = req.body
+    if(!user.isEmployer) return next({name:"unauthorized", message: "unauthorized"})
 
     for(i = assignTo.length - 1; i > 0; i--) {
         assignTo = assignTo.replace(" ","")
@@ -42,12 +43,13 @@ module.exports.assignNewTask = async (req, res, next) => {
 
         let employees = await User.find({employerEmail: user.email})
         console.log(employees, 'employees assignNewTask')
+        employees = employees.filter(employee => employee.allowedByEmployer)
         employees = employees.map(employee => employee.email)
         console.log(employees, "mapped employees assignNewTask")
 
         let errMessageArr = []
         for(employeeEmail of assignTo) {
-            if(!employees.includes(employeeEmail)) errMessageArr.push(`No such employee having email ${employeeEmail}`)
+            if(!employees.includes(employeeEmail)) errMessageArr.push(`No such allowed employee having email ${employeeEmail}`)
         }
         console.log(errMessageArr, "errMessageArr")
         if(errMessageArr.length) return next({name: "bad data", message: errMessageArr})
