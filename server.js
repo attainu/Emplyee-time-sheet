@@ -26,7 +26,14 @@ require("./db.js")
 
 
 app.use((_, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', 'null', '*')
+    // res.setHeader('Access-Control-Allow-Origin', 'null', '*')
+
+    var allowedOrigins = ['null', '*'];
+    var origin = req.headers.origin;
+    if(allowedOrigins.indexOf(origin) > -1){
+         res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+
     res.setHeader('Access-Control-Allow-Headers', 'authorization, Content-Type')
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE')
     res.setHeader('Access-Control-Allow-Credentials', 'true')
