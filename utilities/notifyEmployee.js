@@ -1,14 +1,12 @@
 const nodemailer = require("nodemailer")
 
 
-
-
-module.exports = async (emailsArr, title, body) => {
+module.exports =  (emailsArr, title, body) => {
     
     console.log(emailsArr, title, body, 'emailsArr, title, body')
+    let appEmail =  process.env.appEmail
 
-    let appEmail = await process.env.appEmail
-    let appEmailPassword = await process.env.appEmailPassword
+    let appEmailPassword = process.env.appEmailPassword
 
     let emailsStr = ""
     emailsArr.forEach(email => {
@@ -17,7 +15,7 @@ module.exports = async (emailsArr, title, body) => {
 
     console.log(emailsStr, typeof(emailsStr), "emails")
 
-    let transporter = await nodemailer.createTransport({
+    let transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
         port: 587,
         secure: false,
@@ -28,8 +26,8 @@ module.exports = async (emailsArr, title, body) => {
         }
 
     });
-
-    let mailOptions = await {
+    
+    let mailOptions = {
         from: appEmail,
         to: emailsStr,
         subject: title,

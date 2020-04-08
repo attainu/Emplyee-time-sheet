@@ -1,4 +1,4 @@
-const User = require("./../models/User.js")
+// const User = require("./../models/User.js")
 
 module.exports = (name, email, DBlist) => {
 
@@ -12,9 +12,7 @@ module.exports = (name, email, DBlist) => {
 
     name = name.toLowerCase()
     email = email.toLowerCase()
-    // let DBname =  (name.slice(0,12) + email.slice(0,12)).toLowerCase()
 
-    // console.log(DBname, 'sliced DB lowerCase')
 
     let DBname = email
     let DBnameOkey
@@ -41,7 +39,6 @@ module.exports = (name, email, DBlist) => {
             DBname = DBname.slice(0, 29)
         }
 
-        console.log(!DBnameOkey || overSized, 'condition for looping')
     } while(!DBnameOkey || overSized) 
 
     function byteLength(str) {

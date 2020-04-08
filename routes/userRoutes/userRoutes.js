@@ -31,7 +31,6 @@ router.post('/verifyEmailByOtp', auth, verifyEmailByOtp, dashboard)
 
 router.delete('/logout', auth, deleteLogout)
 
-// router.patch('/employer/allowEmployee', auth, patchAllowEmployee)
 router.patch('/employer/allowEmployee', auth, patchAllowEmployee)
 
 router.delete('/employer/rejectEmployee/:employeeEmail', auth, deleteRejectedEmployee)

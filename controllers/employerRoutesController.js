@@ -1,5 +1,7 @@
 const User = require("./../models/User.js")
+
 let DailyTasksList
+
 const funcDailyTasks = require("./../models/funcDailytasks.js")
 
 let todayDate = Date().slice(0,15).replace(" ","_").replace(" ","_").replace(" ","_")
@@ -42,40 +44,62 @@ module.exports.assignNewTask = async (req, res, next) => {
     try {
 
         let employees = await User.find({employerEmail: user.email})
-        console.log(employees, 'employees assignNewTask')
         employees = employees.filter(employee => employee.allowedByEmployer)
         employees = employees.map(employee => employee.email)
-        console.log(employees, "mapped employees assignNewTask")
 
         let errMessageArr = []
         for(employeeEmail of assignTo) {
             if(!employees.includes(employeeEmail)) errMessageArr.push(`No such allowed employee having email ${employeeEmail}`)
         }
-        console.log(errMessageArr, "errMessageArr")
         if(errMessageArr.length) return next({name: "bad data", message: errMessageArr})
 
 
 
-        //send notifiacation
         notifyEmployee(assignTo, title, details)
         
-        //store todaysTasks in DB
-        // DailyTasksList.findOneAndUpdate({date: todayDate}, {$push: {todaysTasks: new AssignmentClass(assignTo, title, details)}}, {new: true}, (err, doc) => {
         DailyTasksList.findOneAndUpdate({date: todayDate}, {$push: {tasks: new AssignmentClass(assignTo, title, details)}}, {new: true}, (err, doc) => {
 
             if(err) {
                 console.log(err, "err while pushing assignment")
-                return next("err while pushing assignment")
+                return next({err: err})
             }
-            console.log(doc, 'doc')
             next()
 
         })
 
 
     } catch(err) {
-        console.log("err catch")
-        next(err)
+
+        next({err: err})
     }
+
+}
+
+
+module.exports.selectDate = async (req, res, next) => {
+
+    let {user, token} = req.body
+    let {date} = req.query
+
+
+    
+    try {
+        DailyTasksList = await funcDailyTasks(user.email)
+
+        let selectedDateTasks = await DailyTasksList.findOne({date: date})
+
+        res.json({
+            user: user,
+            selectedDateTasks: selectedDateTasks,
+            token: token
+        })
+    } catch(err) {
+        next({err: err})
+    }
+   
+
+    
+
+
 
 }

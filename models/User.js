@@ -41,10 +41,8 @@ const userSchema = new mongoose.Schema({
     DBname: {
         type: String
     }
-    
 
 })
-
 
 
 const User = mongoose.model("users", userSchema)

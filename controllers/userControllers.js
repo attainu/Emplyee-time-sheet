@@ -5,17 +5,16 @@ const bcrypt = require("bcryptjs")
 const User = require('./../models/User.js')
 const Otp = require('./../models/Otp.js')
 const funcDailyTasks = require('./../models/funcDailytasks.js')
+
 let DailyTasksList
 
 let todayDate = Date().slice(0,15).replace(" ","_").replace(" ","_").replace(" ","_")
 console.log(todayDate, 'todayDate', typeof(todayDate))
-// let dateObj = {date: todayDate}
-// console.log(dateObj)
-// let todayOtherDate = {...todayDate}
-// console.log(todayOtherDate)
+
 
 const sendOTP = require('./../utilities/sendOtp.js')
 const getNewDBname = require('./../utilities/getNewDBname.js')
+const sendMonthlyAttendance = require("./../utilities/sendMonthlyAttendance.js")
 
 class UserClass {
     constructor(name, email, password, isEmployer, employerEmail) {
@@ -31,139 +30,116 @@ class UserClass {
 const cookieOptions = {maxAge: 1000 * 60 * 60 * 12, httpOnly: true, path: '/', sameSite: "none"}
 
 
+module.exports.dashboard = async (req, res, next) => {
+    let {user} = req.body
+    let {email} = user
+  
+    
 
-module.exports.dashboard = (req, res, next) => {
-    let {email} = req.body.user
-    User.findOne({email: email}, async (err, user) => {
-        if(err) return next(err)
-
-        console.log(req.body.token, 'req body token dashboard')
-        console.log(req.cookies, 'req cookies dashboard')
-
-        
-        // console.log(user, 'dashboard1')
-        delete user._doc.password
-        console.log(user, 'dashboard2')
+    
+    delete user._doc.password
 
 
-        try {
-            console.log(email, 'email bofore going to DailyTaskList')
-            DailyTasksList = await funcDailyTasks(email)
-            
-            DailyTasksList.findOne({date: todayDate}, (err, todaysTasks) => {
-                if(err) return next(err)
-                // console.log(todayDate)
-                console.log(todaysTasks, !todaysTasks, '!todaysTasks')
-                if(!todaysTasks) {
-                    // console.log(todayDate)
-                    let dateObj = {date: todayDate}
-                    todaysTasks = new DailyTasksList(dateObj)
-                    // console.log(todaysTasks, 'todaysTasks before saving')
-                    todaysTasks.save()
-                    .then(response => {
-                        // console.log(response, 'response saving todaysTasks')
-                        
-                        
-                
-                    })
-                    .catch(reject => console.log(reject))
-                }
+    try {
 
+        const funcMonthlyAttendance = require("./../models/funcMonthlyAttendance.js")
+        const MonthlyAttendance = await funcMonthlyAttendance(email) 
+        let month = (new Date()).toLocaleString('default', {month: "long", year: "numeric"})
 
-                if(user.isEmployer) {
-                    User.find({employerEmail: email}, async (err, employees) => {
-                        if(err) return next(err)
-
-                        // console.log(employees, 'employees')
-                        let employeesWaiting = employees.filter(employee => !employee.allowedByEmployer)
-                        employeesWaiting = employeesWaiting.map(employee => {
-                            return {
-                                name: employee.name,
-                                email: employee.email
-                            }
-                        })
-                        // console.log(employees, 'mapped employees')
-
-                        let allowedEmployees = employees.filter(employee => employee.allowedByEmployer)
-                        allowedEmployees = allowedEmployees.map(employee => {
-                            return {
-                                name: employee.name,
-                                email: employee.email
-                            }
-                        })
-                        // try {
-                        //     console.log(email, 'email bofore going to DailyTaskList')
-                        //     DailyTasksList = await funcDailyTasks(email)
-        
-                        // } catch(err) {
-                        //     console.log(err, 'err')
-                        // }
-                        // let todayObj = new DailyTasksList({name: `${email}-employer`})
-                        // todayObj.save()
-                        // .then(response => console.log(response))
-                        // .catch(reject => console.log(reject))
-        
-                        // console.log(todaysTasks, 'todaysTasks before res.json')
-                        res.json({
-                            successLogin: true,
-                            user: user,
-                            allowedEmployees: allowedEmployees,
-                            employeesWaiting: employeesWaiting,
-                            token: req.body.token,
-                            todaysTasks: todaysTasks
-                        })
-        
-        
-                    })
-                } else {
-        
-                    // try {
-                    //     console.log(email, 'email bofore going to DailyTaskList')
-                    //     DailyTasksList = await funcDailyTasks(email)
-        
-                    // } catch(err) {
-                    //     console.log(err, 'err')
-                    // }
-                    // let todayObj = new DailyTasksList({name: `${user.employerEmail}'s-employee`})
-                    // todayObj.save()
-                    // .then(response => console.log(response))
-                    // .catch(reject => console.log(reject))
-        
-                    User.findOne({email: user.employerEmail}, (err, employer) => {
-                        if(err) return next(err)
-
-
-                        res.json({
-                            successLogin: true,
-                            user: user,
-                            employerName: employer.name,
-                            token: req.body.token,
-                            todaysTasks: todaysTasks
-                        })
-
+        MonthlyAttendance.findOne({month: month}, async (err, monthlyAttendance) => {
+            if(err) return next({err: err})
+            if(!monthlyAttendance) {
+                await MonthlyAttendance.find({monthCompleted: false}, async (err, docs) => {
+                    if(err) return next({err: err})
+                    docs.forEach(async doc => {
+                        doc.monthCompleted = true
+                        if(!doc.sentToEmployer) {
+                            console.log("sending monthly attendance to employer")
+                            sendMonthlyAttendance(email, doc)
+                            doc.sentToEmployer = true
+                        }
+                        await doc.save().catch(err => next({err: err}))
                     })
 
+                    monthlyAttendance = new MonthlyAttendance()
+                    monthlyAttendance.save()
+                })
+            }  
+        })
 
+
+
+
+        console.log(email, 'email bofore going to DailyTaskList')
+        DailyTasksList = await funcDailyTasks(email)
+        
+        DailyTasksList.findOne({date: todayDate}, (err, todaysTasks) => {
+            if(err) return next({err: err})
+            if(!todaysTasks) {
+                let dateObj = {date: todayDate}
+                todaysTasks = new DailyTasksList(dateObj)
+                todaysTasks.save()
+                // .then(response => {                
+                // })
+                .catch(reject => console.log(reject))
+            }
+
+
+            if(user.isEmployer) {
+                User.find({employerEmail: email}, async (err, employees) => {
+                    if(err) return next(err)
+
+                    let employeesWaiting = employees.filter(employee => !employee.allowedByEmployer)
+                    employeesWaiting = employeesWaiting.map(employee => {
+                        return {
+                            name: employee.name,
+                            email: employee.email
+                        }
+                    })
+
+                    let allowedEmployees = employees.filter(employee => employee.allowedByEmployer)
+                    allowedEmployees = allowedEmployees.map(employee => {
+                        return {
+                            name: employee.name,
+                            email: employee.email
+                        }
+                    })
                     
-                }
+
+                    res.json({
+                        user: user,
+                        allowedEmployees: allowedEmployees,
+                        employeesWaiting: employeesWaiting,
+                        token: req.body.token,
+                        todaysTasks: todaysTasks
+                    })
+    
+    
+                })
+            } else {
+    
+                
+                User.findOne({email: user.employerEmail}, (err, employer) => {
+                    if(err) return next(err)
 
 
+                    res.json({
+                        user: user,
+                        employerName: employer.name,
+                        token: req.body.token,
+                        todaysTasks: todaysTasks
+                    })
 
+                })
+    
+            }
 
-            })
+        })
 
-            
-
-        } catch(err) {
-            console.log(err, 'err')
-        }
-
-
-
- 
-
-
-    })
+    } catch(err) {
+        console.log(err, 'err')
+        next({err: {name: "invalidData", message: "unauthorized"}})
+    }
 
 
 }
@@ -174,12 +150,11 @@ module.exports.postLogin = (req, res, next) => {
         password
     } = req.body
 
-    // res.clearCookie("token", {maxAge: 1000 * 60 * 60 * 12, httpOnly: true})
 console.log(req.cookies.token, 'cookie postLogin')
     User.findOne({email: email}, async (err, user) => {
         if(err) return next(err)
-        if(!user) return next({name: "invalidData", message: "unauthorized"})
-        if(user.isLoggedIn) return next({name: "bad request", message: "Logged in already"})
+        if(!user) return next({err: {name: "invalidData", message: "unauthorized"}})
+        // if(user.isLoggedIn) return next({name: "bad request", message: "Logged in already"})
 
         if(bcrypt.compareSync(password, user.password)) {
             let token = jwt.sign({email: email}, process.env.jwtPrivateKey, {expiresIn: 1000 * 60 * 60 * 12})
@@ -187,11 +162,7 @@ console.log(req.cookies.token, 'cookie postLogin')
 
             console.log(token, 'token postLogin')
    
-            // console.log(user, 'postLogin1')
-
             user.isLoggedIn = true
-
-            // console.log(user, 'postLogin2')
 
             user.save().then(user => {
                 delete user._doc.password
@@ -205,12 +176,10 @@ console.log(req.cookies.token, 'cookie postLogin')
             
         } else {
 
-            next({name: "invalidData", message: "unauthorized"})
+            next({err: {name: "invalidData", message: "unauthorized"}})
         }
 
-       
     })
-   
    
 }
 
@@ -222,7 +191,7 @@ module.exports.postRegisterEmployer = async (req, res, next) => {
         rePassword
     } = req.body
 
-    if(password != rePassword) return next({name: "invalidData", message: "Re-write the same password!!!"})
+    if(password != rePassword) return next({err: {name: "invalidData", message: "Re-write the same password!!!"}})
 
     let hash = bcrypt.hashSync(password, 10)
 
@@ -240,7 +209,6 @@ module.exports.postRegisterEmployer = async (req, res, next) => {
             res.cookie("token", token, cookieOptions)
             
             console.log(token, 'token postRegisterEmployer')
-            // req.body.isEmailVerified = user.isEmailverified
             req.body = {}
 
             delete user._doc.password
@@ -263,20 +231,14 @@ module.exports.makeEmployerDB = (req, res, next) => {
     User.find({isEmployer: true}, (err, res) => {
         if(err) return next(err)
         let DBlist = res.map(employer => employer.DBname)
-        // console.log(DBlist, 'DBlist')
 
         let newDBname = getNewDBname(name, email, DBlist)
-        // console.log(newDBname, 'newDBname')
 
         User.findOneAndUpdate({email: email}, {DBname: newDBname}, {new: true}, (err, user) => {
             if(err) return next(err)
 
-            // console.log(user, "employer with DBname")
             next()
         })
-
-
-
 
     })
     
@@ -292,11 +254,11 @@ module.exports.postRegisterEmployee = (req, res, next) => {
         rePassword
     } = req.body
 
-    if(password != rePassword) return next({name: "invalidData",message: "Re-write the same password!!!"})
+    if(password != rePassword) return next({err: {name: "invalidData",message: "Re-write the same password!!!"}})
 
     User.findOne({email: employerEmail}, (err, employer) => {
         if(err) return next(next)
-        if(!employer) return next({name: "invalidData",message: "Company's email does not exist."})
+        if(!employer) return next({err:{name: "invalidData",message: "Company's email does not exist."}})
 
         let hash = bcrypt.hashSync(password, 10)
 
@@ -314,7 +276,6 @@ module.exports.postRegisterEmployee = (req, res, next) => {
                 res.cookie("token", token, cookieOptions)
                 
                 console.log(token, 'token postRegisterEmployee')
-                // req.body.isEmailVerified = user.isEmailverified
                 req.body = {}
 
                 delete user._doc.password
@@ -337,12 +298,8 @@ module.exports.sendOTP = (req, res, next) => {
     let otp
     let {email,isEmailverified} = req.body.user
     let {token} = req.body
-    console.log(token, 'token sendOtp1')
 
-    // console.log(isEmailverified, 'isEmailVerified')
-    // console.log(email, 'email')
     if(!isEmailverified) {
-        // console.log('creating OTP')
         otp = Math.floor(Math.random() *10000)
         let newOtpObj = {
             email: email,
@@ -383,10 +340,6 @@ module.exports.verifyEmailByOtp = async (req, res, next) => {
         if(userInOtps.otp == otp) {
                
 
-            // user = await User.findOne({email: email})
-            // console.log(user)
-
-
             await Otp.findOneAndRemove({otp: otp})
             let filter = {email: email}
             let update = {isEmailverified: true}
@@ -403,7 +356,7 @@ module.exports.verifyEmailByOtp = async (req, res, next) => {
 
            
         } else {
-            next({name: "invalidData",message: "Wrong OTP"})
+            next({name: "invalidOTP",message: "Enter the otp sent to your email."})
         }
     } catch(err) {
         console.log(err)
@@ -415,10 +368,6 @@ module.exports.verifyEmailByOtp = async (req, res, next) => {
 }
 
 module.exports.deleteLogout = async (req, res, next) => {
-    console.log('loggin out')
-    // console.log(req, 'req logout')
-    // console.log(req.cookies, 'req logout')
-    console.log(req.cookies.token, 'req logout')
 
 
     let {email} = req.body.user
@@ -426,11 +375,8 @@ module.exports.deleteLogout = async (req, res, next) => {
     try {
         let user = await User.findOneAndUpdate({email: email}, {isLoggedIn: false}, {new: true})
         
-        console.log(req.cookies.token, 'cookie1')
         res.clearCookie("token", cookieOptions)
-        console.log(req.cookies.token, 'cookie2')
     
-        console.log(user, 'logged out')
     
         res.json({
             loggedOut: true
@@ -445,34 +391,25 @@ module.exports.deleteLogout = async (req, res, next) => {
 
 
 module.exports.patchAllowEmployee = async (req, res, next) => {
-    // console.log(req.body.employeeEmail, 'allowEmployee')
     let {employeeEmail, user} = req.body
     let employee = await User.findOneAndUpdate({email: employeeEmail}, {allowedByEmployer: true}, {new: true}) 
     
     
     DailyTasksList.findOne({date: todayDate}, (err, todaysTasks) => {
         if(err) return next(err)
-        // console.log(todayDate)
         console.log(todaysTasks, !todaysTasks, '!todaysTasks')
         if(!todaysTasks) {
-            // console.log(todayDate)
             let dateObj = {date: todayDate}
             todaysTasks = new DailyTasksList(dateObj)
-            // console.log(todaysTasks, 'todaysTasks before saving')
             todaysTasks.save()
-            .then(response => {
-                // console.log(response, 'response saving todaysTasks')
-                
-                
-        
-            })
+            // .then(response => {
+            // })
             .catch(reject => console.log(reject))
         }
         
         User.find({employerEmail: user.email}, async (err, employees) => {
             if(err) return next(err)
     
-            // console.log(employees, 'employees')
             let employeesWaiting = employees.filter(employee => !employee.allowedByEmployer)
             employeesWaiting = employeesWaiting.map(employee => {
                 return {
@@ -480,7 +417,6 @@ module.exports.patchAllowEmployee = async (req, res, next) => {
                     email: employee.email
                 }
             })
-            // console.log(employees, 'mapped employees')
     
             let allowedEmployees = employees.filter(employee => employee.allowedByEmployer)
             allowedEmployees = allowedEmployees.map(employee => {
@@ -498,45 +434,33 @@ module.exports.patchAllowEmployee = async (req, res, next) => {
                 token: req.body.token,
                 todaysTasks: todaysTasks
             })
-    
-    
-        })
 
+        })
 
     })
    
 }
 
 module.exports.deleteRejectedEmployee = async (req, res, next) => {
-    // console.log(req.body)
     let {employeeEmail} = req.params
     let {user} = req.body
-    // console.log(employeeEmail)
     await User.findOneAndRemove({email: employeeEmail})
 
     DailyTasksList.findOne({date: todayDate}, (err, todaysTasks) => {
         if(err) return next(err)
-        // console.log(todayDate)
         console.log(todaysTasks, !todaysTasks, '!todaysTasks')
         if(!todaysTasks) {
-            // console.log(todayDate)
             let dateObj = {date: todayDate}
             todaysTasks = new DailyTasksList(dateObj)
-            // console.log(todaysTasks, 'todaysTasks before saving')
             todaysTasks.save()
-            .then(response => {
-                // console.log(response, 'response saving todaysTasks')
-                
-                
-        
-            })
+            // .then(response => {
+            // })
             .catch(reject => console.log(reject))
         }
         
         User.find({employerEmail: user.email}, async (err, employees) => {
             if(err) return next(err)
     
-            // console.log(employees, 'employees')
             let employeesWaiting = employees.filter(employee => !employee.allowedByEmployer)
             employeesWaiting = employeesWaiting.map(employee => {
                 return {
@@ -544,7 +468,6 @@ module.exports.deleteRejectedEmployee = async (req, res, next) => {
                     email: employee.email
                 }
             })
-            // console.log(employees, 'mapped employees')
     
             let allowedEmployees = employees.filter(employee => employee.allowedByEmployer)
             allowedEmployees = allowedEmployees.map(employee => {

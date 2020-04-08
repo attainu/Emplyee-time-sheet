@@ -3,7 +3,6 @@ const dotenv = require("dotenv")
 const cookieParser = require("cookie-parser")
 
 
-
 const app = express()
 
 
@@ -16,23 +15,20 @@ const userRoutes = require("./routes/userRoutes/userRoutes.js")
 const employerRoute = require("./routes/appRoutes/employerRoutes.js")
 const employeeRoute = require("./routes/appRoutes/employeeRoutes.js")
 
+
 dotenv.config({
-    path: "./private.env"
+    path: "./privateData.env"
 })
 
 
 require("./db.js")
 
-const User = require("./models/User.js")
 
 
 app.use((_, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', 'null')
     res.setHeader('Access-Control-Allow-Headers', 'authorization, Content-Type')
     res.setHeader('Access-Control-Allow-Methods', 'PATCH, DELETE')
-
-    // res.setHeader('Access-Control-Allow-Methods', 'DELETE')
-
     res.setHeader('Access-Control-Allow-Credentials', 'true')
     next()
 })
@@ -43,21 +39,10 @@ app.use(employeeRoute)
 
 
 
-// let user = new User({
-//     email: "user@mail",
-//     password: "password",
-//     isEmployer: false,
-//     employerEmail: "employer@mail" 
-// })
-
-// user.save()
-// .then((user) => console.log(user))
-// .catch((err) => console.log(err))
-
 
 app.use((err, req, res, next) => {
-    console.log("errorHandler")
-    res.json({err: err})
+    console.log(err, "errorHandler")
+    res.json(err)
 })
 
 const port = process.env.PORT || 8080

@@ -1,12 +1,38 @@
 const nodemailer = require("nodemailer")
 
 
-module.exports =  (email, otp) => {
+
+module.exports =  (email, doc) => {
   
+    let attendanceDataHTML = `
+            <tr>
+                <th>Employee</th>
+                <th>Tasks</th>
+                <th>Hours</th>
+            </tr>
+    `
+
+    doc.employees.forEach(employee => {
+        attendanceDataHTML = attendanceDataHTML + `
+            <tr>
+                <th>${employee.email}</th>
+                <th>${employee.tasks}</th>
+                <th>${employee.hours}</th>
+            </tr>
+        `
+    })
+
+    attendanceDataHTML = `<table>${attendanceDataHTML}</table>`
+
+
+
+
+
     let appEmail = process.env.appEmail
 
     let appEmailPassword = process.env.appEmailPassword
 
+  
     let transporter = nodemailer.createTransport({
           host: "smtp.gmail.com",
           port: 587,
@@ -17,15 +43,12 @@ module.exports =  (email, otp) => {
               }
       });
 
-  
+   
     let mailOptions = {
         from: appEmail,
         to: email,
-        subject: "OTP for registering to Employee's Time-sheet",
-        html: `
-            <h3>OTP = ${otp}</h3>
-            <p>OTP will expire after 10 minutes.</p>
-        `
+        subject: `Attendance of ${doc.month}`,
+        html: attendanceDataHTML
     };
       
     transporter.sendMail(mailOptions, function(error, info){
