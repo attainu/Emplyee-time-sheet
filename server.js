@@ -25,7 +25,7 @@ require("./db.js")
 
 
 
-app.use((_, res, next) => {
+app.use((req, res, next) => {
     // res.setHeader('Access-Control-Allow-Origin', 'null', '*')
 
     var allowedOrigins = ['null', '*'];
