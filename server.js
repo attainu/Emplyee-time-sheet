@@ -28,7 +28,7 @@ require("./db.js")
 app.use((_, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', 'null', '*')
     res.setHeader('Access-Control-Allow-Headers', 'authorization, Content-Type')
-    res.setHeader('Access-Control-Allow-Methods', 'PATCH, DELETE')
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE')
     res.setHeader('Access-Control-Allow-Credentials', 'true')
     next()
 })
