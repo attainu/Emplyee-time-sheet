@@ -28,7 +28,7 @@ require("./db.js")
 app.use((req, res, next) => {
     // res.setHeader('Access-Control-Allow-Origin', 'null', '*')
 
-    var allowedOrigins = ['null', '*', 'http://localhost:1234/'];
+    var allowedOrigins = ['null', '*', 'http://localhost:1234', 'http://localhost:8080'];
     var origin = req.headers.origin;
     if(allowedOrigins.indexOf(origin) > -1){
          res.setHeader('Access-Control-Allow-Origin', origin);
