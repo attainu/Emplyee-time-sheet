@@ -29,7 +29,7 @@ app.use((req, res, next) => {
     // res.setHeader('Access-Control-Allow-Origin', 'null', '*')
 
     console.log(req.headers.origin, 'req.headers.origin')
-    var allowedOrigins = ['null', '*', 'http://localhost:1234', 'http://localhost:8080'];
+    var allowedOrigins = ['null', '*', 'http://localhost:1234', 'http://localhost:8080', 'https://infallible-jang-c2ff23.netlify.com/'];
     var origin = req.headers.origin;
     if(allowedOrigins.indexOf(origin) > -1){
          res.setHeader('Access-Control-Allow-Origin', origin);
