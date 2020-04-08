@@ -5,7 +5,7 @@ const cors = require("cors")
 
 const app = express()
 app.use(cors({
-    origin: "null",
+    origin: "https://cocky-bardeen-25a87e.netlify.com/",
     credentials: true
 }))
 
