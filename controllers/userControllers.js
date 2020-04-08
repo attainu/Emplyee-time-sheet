@@ -150,7 +150,6 @@ module.exports.postLogin = (req, res, next) => {
         password
     } = req.body
 
-console.log(req.cookies.token, 'cookie postLogin')
     User.findOne({email: email}, async (err, user) => {
         if(err) return next(err)
         if(!user) return next({err: {name: "invalidData", message: "unauthorized"}})
