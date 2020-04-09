@@ -3,7 +3,6 @@ const nodemailer = require("nodemailer")
 
 module.exports =  (emailsArr, title, body) => {
     
-    console.log(emailsArr, title, body, 'emailsArr, title, body')
     let appEmail =  process.env.appEmail
 
     let appEmailPassword = process.env.appEmailPassword
@@ -13,7 +12,6 @@ module.exports =  (emailsArr, title, body) => {
         return emailsStr = emailsStr + `${email}, `
     })
 
-    console.log(emailsStr, typeof(emailsStr), "emails")
 
     let transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",

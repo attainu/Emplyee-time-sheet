@@ -9,7 +9,7 @@ const app = express()
 //     credentials: true
 // }))
 app.use(cors({
-    origin: "null",
+    origin: "*",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true
 }))
