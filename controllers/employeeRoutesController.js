@@ -20,7 +20,6 @@ module.exports.addInTime = async (req, res, next) => {
         user
     } = req.body
 
-    console.log(assignedTo, "assignedTo addInTime")
 
     try {
         if(!(user.email == assignedTo[0].employeeEmail)) throw new Error("unauthorized")

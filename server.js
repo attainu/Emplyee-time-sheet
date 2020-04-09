@@ -9,9 +9,9 @@ const app = express()
 //     credentials: true
 // }))
 app.use(cors({
-    "origin": "null",
-    "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-    "credentials": true
+    origin: "null",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true
 }))
 
 

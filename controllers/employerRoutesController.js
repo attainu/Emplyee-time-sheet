@@ -15,7 +15,6 @@ class AssignmentClass {
         this.assignedTo = assignTo.map(employeeEmail => {
             return {employeeEmail: employeeEmail}
         })
-        console.log(this.assignedTo, typeof(this.assignedTo), 'assignedTo')
         this.title = title
         this.details = details
     }
@@ -23,7 +22,6 @@ class AssignmentClass {
 
 
 module.exports.assignNewTask = async (req, res, next) => {
-    console.log(req.body, 'req.body at assignNewTask')
     let {
         user,
         assignTo,
